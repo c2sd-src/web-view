@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 적용 기능 요구사항 정의서 v2.0 | 모코엠시스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0f1a2e;
+  --navy-mid: #1a2d4a;
+  --navy-light: #243b5e;
+  --blue: #2e75b6;
+  --blue-bright: #4a9eff;
+  --blue-glow: #2e75b640;
+  --cyan: #00d4aa;
+  --cyan-dim: #00d4aa30;
+  --orange: #ff8c42;
+  --red: #ff4757;
+  --gold: #ffd32a;
+  --text: #e8edf5;
+  --text-dim: #8b9dc3;
+  --text-muted: #5a6f94;
+  --surface: #162035;
+  --surface-hover: #1e2d4d;
+  --border: #2a3f65;
+  --radius: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--navy);
+  color: var(--text);
+  line-height: 1.7;
+  font-weight: 300;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--navy); }
+::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 3px; }
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, var(--blue-glow) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, #00d4aa15 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 10% 60%, #ff8c4210 0%, transparent 50%);
+  pointer-events: none;
+}
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.15;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent);
+}
+.hero-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan);
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--cyan);
+  letter-spacing: 0.05em;
+  margin-bottom: 2rem;
+  animation: fadeUp 0.8s ease both;
+}
+.hero-badge::before { content: '●'; font-size: 0.5rem; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.hero h1 {
+  position: relative;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 1.2rem;
+  animation: fadeUp 0.8s 0.15s ease both;
+}
+.hero h1 .accent { color: var(--cyan); }
+.hero .subtitle {
+  position: relative;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--text-dim);
+  max-width: 700px;
+  margin-bottom: 2.5rem;
+  animation: fadeUp 0.8s 0.3s ease both;
+}
+.hero-meta {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  animation: fadeUp 0.8s 0.45s ease both;
+}
+.hero-meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.hero-meta-item .num {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--blue-bright);
+}
+.hero-meta-item .label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.04em; }
+
+.hero-scroll {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: fadeUp 1s 0.8s ease both;
+}
+.hero-scroll .arrow {
+  width: 20px;
+  height: 30px;
+  border: 2px solid var(--text-muted);
+  border-radius: 10px;
+  position: relative;
+}
+.hero-scroll .arrow::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 3px;
+  height: 8px;
+  background: var(--text-muted);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  animation: scrollDown 1.8s infinite;
+}
+@keyframes scrollDown {
+  0% { opacity: 1; top: 6px; }
+  100% { opacity: 0; top: 16px; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Navigation ── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #0f1a2eee;
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  overflow-x: auto;
+}
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0;
+}
+.nav a {
+  display: block;
+  padding: 1rem 1.2rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all 0.25s;
+}
+.nav a:hover, .nav a.active {
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+}
+
+/* ── Sections ── */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+section { padding: 5rem 0; }
+section + section { border-top: 1px solid var(--border); }
+
+.section-label {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+  padding: 3px 12px;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+.section-title {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 900;
+  margin-bottom: 0.6rem;
+  line-height: 1.3;
+}
+.section-desc {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  max-width: 700px;
+  margin-bottom: 3rem;
+}
+
+/* ── Category cards ── */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.2rem;
+}
+.cat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.cat-card:hover {
+  border-color: var(--blue);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px #2e75b615;
+}
+.cat-card .code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--cyan);
+  background: var(--cyan-dim);
+  padding: 2px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 0.8rem;
+}
+.cat-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.cat-card p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+.cat-card .count {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--blue-glow);
+}
+
+/* ── Phase Timeline ── */
+.timeline { position: relative; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 28px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--blue), var(--cyan), var(--orange), var(--green, #2E8B57), #8B5CF6);
+}
+.phase-block {
+  position: relative;
+  padding-left: 72px;
+  margin-bottom: 3rem;
+}
+.phase-dot {
+  position: absolute;
+  left: 18px;
+  top: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid;
+  background: var(--navy);
+}
+.phase-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+.phase-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 12px;
+  border-radius: 4px;
+  color: white;
+}
+.phase-period {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.phase-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.8rem; }
+.phase-items { display: flex; flex-direction: column; gap: 0.5rem; }
+.phase-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.phase-item:hover { border-color: var(--blue); background: var(--surface-hover); }
+.phase-item .id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--blue-bright);
+  background: #2e75b620;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.phase-item .wow {
+  font-size: 0.65rem;
+  color: var(--gold);
+  background: #ffd32a20;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.phase-item .pri {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.pri-high { color: var(--red); background: #ff475720; }
+.pri-mid { color: var(--orange); background: #ff8c4220; }
+.pri-low { color: var(--cyan); background: var(--cyan-dim); }
+
+/* ── Requirements detail ── */
+.req-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+.req-filter {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.req-filter:hover, .req-filter.active {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.req-list { display: flex; flex-direction: column; gap: 1rem; }
+.req-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.req-card:hover { border-color: var(--blue); }
+.req-card.wow-card { border-left: 3px solid var(--gold); }
+.req-card-header {
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  user-select: none;
+  flex-wrap: wrap;
+}
+.req-card-header:hover { background: var(--surface-hover); }
+.req-card-header .arrow {
+  transition: transform 0.3s;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.req-card.open .req-card-header .arrow { transform: rotate(90deg); }
+.req-card-header .req-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--blue-bright);
+  flex-shrink: 0;
+}
+.req-card-header .req-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 200px;
+}
+.req-card-header .tags { display: flex; gap: 0.4rem; flex-shrink: 0; flex-wrap: wrap; }
+.req-card-body {
+  display: none;
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.req-card.open .req-card-body { display: block; padding-top: 1.2rem; }
+.req-field { margin-bottom: 1rem; }
+.req-field-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+.req-field-value { font-size: 0.88rem; line-height: 1.7; color: var(--text-dim); }
+.req-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 700px) { .req-detail-grid { grid-template-columns: 1fr; } }
+
+/* ── Dep chains ── */
+.dep-chain {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+  padding: 1rem 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.dep-chain .label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--cyan);
+  min-width: 100px;
+}
+.dep-node {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+}
+.dep-arrow { color: var(--text-muted); font-size: 0.8rem; }
+
+/* ── KPI table ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.5rem;
+  text-align: center;
+}
+.kpi-card .dept { font-size: 0.75rem; color: var(--cyan); font-weight: 600; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.kpi-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.8rem; }
+.kpi-card ul { list-style: none; text-align: left; }
+.kpi-card li {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.kpi-card li:last-child { border: 0; }
+.kpi-card li::before { content: '→ '; color: var(--blue-bright); }
+
+/* ── Doc info ── */
+.doc-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.doc-info-item .label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+.doc-info-item .value { font-size: 0.9rem; font-weight: 500; }
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  padding: 3rem 2rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+footer .confidential {
+  display: inline-block;
+  padding: 4px 16px;
+  border: 1px solid var(--red);
+  color: var(--red);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-badge">MOCO-SP-AI-REQ-001 v2.0</div>
+  <h1>AI 적용 기능<br><span class="accent">요구사항 정의서</span></h1>
+  <p class="subtitle">EAI/ESB 정보연계 도구의 LLM 내장을 위한 기능 정의 및 기술검증 계획</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><span class="num">23</span><span class="label">AI 기능 요구사항</span></div>
+    <div class="hero-meta-item"><span class="num">7</span><span class="label">분류 체계</span></div>
+    <div class="hero-meta-item"><span class="num">5</span><span class="label">검증 Phase</span></div>
+    <div class="hero-meta-item"><span class="num">10</span><span class="label">Wow Point</span></div>
+  </div>
+  <div class="hero-scroll"><span>SCROLL</span><div class="arrow"></div></div>
+</div>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#overview">개요</a>
+    <a href="#categories">분류체계</a>
+    <a href="#phases">검증 로드맵</a>
+    <a href="#requirements">상세 요구사항</a>
+    <a href="#dependencies">기술 의존관계</a>
+    <a href="#kpi">사업부별 성과</a>
+    <a href="#docinfo">문서 정보</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══ OVERVIEW ═══ -->
+<section id="overview">
+  <div class="section-label">Overview</div>
+  <h2 class="section-title">왜 EAI/ESB에 AI를 내장하는가</h2>
+  <p class="section-desc">
+    25년간 150개 고객사에 정보연계 서비스를 제공해 온 모코엠시스의 구조적 한계를 AI로 돌파합니다.
+  </p>
+  <div class="cat-grid">
+    <div class="cat-card">
+      <div class="code">PROBLEM</div>
+      <h3>인력 의존적 매출 구조</h3>
+      <p>솔루션 비즈니스사업부 64명이 고객 Site에 3~12개월 상주하며 Customizing. S/W 매출이 인원 가용성에 직접 연동되어 영업이익률이 낮음.</p>
+    </div>
+    <div class="cat-card">
+      <div class="code">PROBLEM</div>
+      <h3>제품 노후화 20년</h3>
+      <p>2000년대 중반 이후 제품 투자 미비. Cloud Native, API-First, Low Code 등 최신 트렌드 미대응. 과거 Renewal 시도 실패 경험 축적.</p>
+    </div>
+    <div class="cat-card">
+      <div class="code">VISION</div>
+      <h3>Passive → Active Intelligence</h3>
+      <p>'수동적 연결(Passive Connection)'에서 '능동적 지능화 연결(Active Intelligence Connection)'로의 패러다임 전환. 궁극적으로 Low Code/No Code 정보연계 도구 완성.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CATEGORIES ═══ -->
+<section id="categories">
+  <div class="section-label">Classification</div>
+  <h2 class="section-title">7개 분류체계, 23건 요구사항</h2>
+  <p class="section-desc">기반 인프라부터 고객가치 확장까지, 기술 의존관계를 반영한 분류입니다.</p>
+  <div class="cat-grid">
+    <div class="cat-card"><div class="count">3</div><div class="code">A</div><h3>기반 인프라</h3><p>LLM 추상화 레이어, RAG 파이프라인, 시스템 메타데이터 수집 프레임워크. 모든 AI 기능의 공통 토대.</p></div>
+    <div class="cat-card"><div class="count">5</div><div class="code">B</div><h3>지능형 설계/개발</h3><p>자연어 기반 인터페이스 정의, 시맨틱 매핑, 코드 자동생성, 변환 룰, 플로우 디자이너. M/M 절감의 핵심.</p></div>
+    <div class="cat-card"><div class="count">2</div><div class="code">C</div><h3>인터페이스 디스커버리</h3><p>메타 기반 인터페이스 자동 도출/추천(★W-11) + 라이브 시연 엔진(★W-01). 킬러 데모의 핵심.</p></div>
+    <div class="cat-card"><div class="count">2</div><div class="code">D</div><h3>테스트 자동화</h3><p>에지케이스 시나리오 자동설계, 시맨틱 가상 데이터 생성. 배포 전 리스크 최소화.</p></div>
+    <div class="cat-card"><div class="count">5</div><div class="code">E</div><h3>자율 운영</h3><p>장애 자동진단, 헬스 스코어(★W-02), 자가 치유(★W-03), ChatOps(★W-09), 예측 경고.</p></div>
+    <div class="cat-card"><div class="count">3</div><div class="code">F</div><h3>보안/거버넌스</h3><p>PII 실시간 마스킹(★W-04), 규제 준수 자동검사(★W-10), AI 에이전트 권한/쿼터 관리.</p></div>
+    <div class="cat-card"><div class="count">6</div><div class="code">G</div><h3>고객가치/확장</h3><p>에이전트 허브 MCP(★W-05), 데이터 큐레이션(★W-06), 비즈니스 영향도(★W-07), 마이그레이션(★W-08), 문서/제안서.</p></div>
+  </div>
+</section>
+
+<!-- ═══ PHASES ═══ -->
+<section id="phases">
+  <div class="section-label">Roadmap</div>
+  <h2 class="section-title">5-Phase 기술검증 로드맵</h2>
+  <p class="section-desc">기술 의존관계에 따라 기반→설계→디스커버리→운영→확장 순서로 10개월간 검증합니다.</p>
+  <div class="timeline" id="timeline"></div>
+</section>
+
+<!-- ═══ REQUIREMENTS ═══ -->
+<section id="requirements">
+  <div class="section-label">Requirements</div>
+  <h2 class="section-title">상세 요구사항 (23건)</h2>
+  <p class="section-desc">★ 표시는 Wow Point 기능입니다. 카드를 클릭하면 상세 내용을 확인할 수 있습니다.</p>
+  <div class="req-filters" id="reqFilters"></div>
+  <div class="req-list" id="reqList"></div>
+</section>
+
+<!-- ═══ DEPENDENCIES ═══ -->
+<section id="dependencies">
+  <div class="section-label">Dependencies</div>
+  <h2 class="section-title">기술 의존 체인</h2>
+  <p class="section-desc">각 Phase의 기능은 앞선 Phase의 결과물을 기반으로 동작합니다.</p>
+  <div id="depChains"></div>
+</section>
+
+<!-- ═══ KPI ═══ -->
+<section id="kpi">
+  <div class="section-label">Business Impact</div>
+  <h2 class="section-title">사업부별 Phase 성과 확인 포인트</h2>
+  <div class="kpi-grid" id="kpiGrid"></div>
+</section>
+
+<!-- ═══ DOC INFO ═══ -->
+<section id="docinfo">
+  <div class="section-label">Document</div>
+  <h2 class="section-title" style="margin-bottom:1.5rem;">문서 정보</h2>
+  <div class="doc-info">
+    <div class="doc-info-item"><div class="label">문서번호</div><div class="value">MOCO-SP-AI-REQ-001</div></div>
+    <div class="doc-info-item"><div class="label">버전</div><div class="value">v2.0</div></div>
+    <div class="doc-info-item"><div class="label">작성일</div><div class="value">2026.04.17</div></div>
+    <div class="doc-info-item"><div class="label">작성자</div><div class="value">최상도 이사 / 전략기획팀</div></div>
+    <div class="doc-info-item"><div class="label">소속</div><div class="value">솔루션사업본부</div></div>
+    <div class="doc-info-item"><div class="label">승인</div><div class="value">김인수 사장 / 솔루션사업본부장</div></div>
+    <div class="doc-info-item"><div class="label">보안등급</div><div class="value" style="color:var(--red)">대외비</div></div>
+    <div class="doc-info-item"><div class="label">총 요구사항</div><div class="value">23건 (Wow Point 10건 포함)</div></div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <div class="confidential">CONFIDENTIAL</div>
+  <p>모코엠시스 솔루션사업본부 전략기획팀 &copy; 2026</p>
+</footer>
+
+<script>
+// ═══ DATA ═══
+const reqs = [
+  { id:"AI-INF-001", cat:"A", catName:"기반 인프라", name:"LLM 추상화 레이어 (AI Service Layer)", pri:"상", phase:"Phase 0", wow:false, wowId:"",
+    desc:"Cloud LLM(GPT, Claude, Gemini)과 On-device LLM(Llama, Mistral)을 교체 가능하게 추상화하는 공통 AI Service Layer를 구축한다.",
+    asIs:"LLM 연동 인프라 부재, 개별 연동 시 벤더 종속 불가피",
+    toBe:"단일 AI Service Layer → LLM 교체 시 설정 변경만으로 전환",
+    kpi:"LLM 교체 시 코드 변경 없이 전환 가능 여부", dep:"없음 (최초 구축)" },
+  { id:"AI-INF-002", cat:"A", catName:"기반 인프라", name:"RAG 파이프라인 및 지식베이스 구축", pri:"상", phase:"Phase 0", wow:false, wowId:"",
+    desc:"기존 프로젝트 산출물을 벡터 DB에 임베딩하여 RAG 기반 지식 검색/증강 체계를 구축한다. 150개 고객 구축 노하우의 AI 활용 기반.",
+    asIs:"산출물이 파일 서버에 산재, 재활용 불가", toBe:"벡터 DB + 임베딩 파이프라인으로 즉시 검색/활용",
+    kpi:"RAG 검색 정확도 80%+", dep:"AI-INF-001" },
+  { id:"AI-INF-003", cat:"A", catName:"기반 인프라", name:"시스템 메타데이터 수집 프레임워크", pri:"상", phase:"Phase 0", wow:false, wowId:"",
+    desc:"SAP RFC/OData, DB DDL, WSDL/OpenAPI, Salesforce API 등 다양한 엔드포인트의 메타데이터를 자동 수집하는 프레임워크.",
+    asIs:"엔지니어가 시스템별 수동 메타데이터 수집 (수일 소요)", toBe:"연결 정보 입력 → 메타데이터 자동 수집 → 표준 메타 모델 정규화",
+    kpi:"SAP, DB, REST API 3개 유형 메타 수집 성공", dep:"없음 (독립 구축)" },
+  { id:"AI-DES-001", cat:"B", catName:"지능형 설계/개발", name:"자연어 기반 인터페이스 정의 자동생성", pri:"상", phase:"Phase 1", wow:false, wowId:"",
+    desc:"자연어로 요구사항 입력 → LLM이 EAI/ESB 표준 인터페이스 정의서 자동 생성.",
+    asIs:"수동 정의서 작성 (2-4시간/건)", toBe:"자연어 입력 → 정의서 초안 자동 생성 → 검토/확정",
+    kpi:"작업시간 60% 단축, 정확도 80%+", dep:"AI-INF-001, AI-INF-002" },
+  { id:"AI-DES-002", cat:"B", catName:"지능형 설계/개발", name:"시맨틱 데이터 매핑 자동 추천", pri:"상", phase:"Phase 1", wow:false, wowId:"",
+    desc:"송수신 스키마의 필드명, 타입, 코멘트, 샘플 데이터를 시맨틱 분석하여 필드 매핑 + 변환 로직 자동 추천.",
+    asIs:"수동 매핑 (1-3일/건)", toBe:"스키마 업로드 → 시맨틱 매핑 후보 자동 제시",
+    kpi:"매핑 작업시간 70% 단축, 정확도 70%+", dep:"AI-INF-001, AI-INF-002" },
+  { id:"AI-DES-003", cat:"B", catName:"지능형 설계/개발", name:"어댑터/커넥터 코드 자동생성", pri:"상", phase:"Phase 1", wow:false, wowId:"",
+    desc:"인터페이스 명세 기반으로 MI EAI/ESB 어댑터 프레임워크에 맞는 코드(Java/ESQL/XML) 자동 생성.",
+    asIs:"수동 코드 작성 (1-2일/건)", toBe:"명세 입력 → 플랫폼별 코드 자동 생성 → 빌드/배포",
+    kpi:"코드 작성 시간 50% 단축, 컴파일 성공률 90%+", dep:"AI-INF-001, AI-INF-002, AI-DES-001" },
+  { id:"AI-DES-004", cat:"B", catName:"지능형 설계/개발", name:"메시지 변환 룰 자동생성", pri:"상", phase:"Phase 1", wow:false, wowId:"",
+    desc:"송수신 메시지 스키마와 매핑 정의 기반으로 XSLT/Java Compute/Script 등 변환 룰 자동 생성.",
+    asIs:"수동 변환 코드 작성", toBe:"매핑 정의 → 변환 룰 + 로직 설명 자동 생성",
+    kpi:"변환 룰 정확도 85%+, 작성시간 60% 단축", dep:"AI-INF-001, AI-DES-002" },
+  { id:"AI-DES-005", cat:"B", catName:"지능형 설계/개발", name:"플로우 디자이너 자연어 인터페이스", pri:"중", phase:"Phase 1", wow:false, wowId:"",
+    desc:"비전문가가 자연어로 플로우를 기술하면 EAI/ESB 플로우 디자이너가 시각적 플로우를 자동 구성. Low Code/No Code 핵심.",
+    asIs:"전문 엔지니어만 플로우 구성 가능", toBe:"자연어 설명 → 시각적 플로우 + 실행 설정 자동 생성",
+    kpi:"비전문가 플로우 구성 성공률 70%+", dep:"AI-INF-001, AI-DES-001, AI-DES-003" },
+  { id:"AI-DIS-001", cat:"C", catName:"인터페이스 디스커버리", name:"시맨틱 인터페이스 디스커버리", pri:"상", phase:"Phase 2", wow:true, wowId:"W-11",
+    desc:"고객 Site 엔드포인트의 메타데이터를 수집하여 LLM이 시스템 간 데이터 연관관계를 시맨틱 분석으로 추론하고, 필요한 인터페이스 목록을 자동 도출하여 추천한다. SAP RFC/BAPI, Salesforce Object 등 표준 시스템은 사전 지식으로, 커스텀 시스템은 테이블명/컬럼명/코멘트 기반으로 추론.",
+    asIs:"프로젝트 초기 1-2개월 수작업 인터페이스 도출", toBe:"엔드포인트 연결 → 메타 수집 → 시맨틱 분석 → 인터페이스 추천 목록 → 담당자 확정",
+    kpi:"도출 단계 80% 시간 단축, 추천 적합도 70%+", dep:"AI-INF-001, AI-INF-002, AI-INF-003" },
+  { id:"AI-DIS-002", cat:"C", catName:"인터페이스 디스커버리", name:"라이브 인터페이스 시연 엔진", pri:"상", phase:"Phase 2", wow:true, wowId:"W-01",
+    desc:"고객 미팅 현장에서 자연어 한 문장 입력 → 30초 내 인터페이스 플로우 생성 + 가상 데이터 흘려보기까지 실시간 시연. DIS-001 → DES-001~005 원스톱 연동.",
+    asIs:"PPT로 설명하는 수준", toBe:"현장 자연어 입력 → 플로우 생성 → 가상 데이터 시연 → 결과 확인",
+    kpi:"비전문가 30분 내 I/F 1건 구현, 고객 만족도 4.5/5.0+", dep:"AI-DIS-001, AI-DES-001~005" },
+  { id:"AI-TST-001", cat:"D", catName:"테스트 자동화", name:"테스트 케이스/시나리오 자동생성", pri:"중", phase:"Phase 2", wow:false, wowId:"",
+    desc:"인터페이스 정의서 기반 정상/비정상/경계값/에지케이스 + 장애 주입 시나리오 자동 설계.",
+    asIs:"수동 테스트 케이스 작성 (0.5-1일/건)", toBe:"명세 입력 → 시나리오 자동 생성 및 실행",
+    kpi:"작성시간 70% 단축, 커버리지 40% 향상", dep:"AI-INF-001, AI-DES-001, AI-DES-002" },
+  { id:"AI-TST-002", cat:"D", catName:"테스트 자동화", name:"시맨틱 테스트 데이터 자동생성", pri:"중", phase:"Phase 2", wow:false, wowId:"",
+    desc:"필드의 비즈니스 의미와 시스템 간 정합성을 이해하여 현실적 가상 테스트 데이터를 AI가 대량 생성.",
+    asIs:"임의 더미 데이터, 비즈니스 규칙 미반영", toBe:"스키마+규칙 → 정합성 보장 가상 데이터 대량 생성",
+    kpi:"데이터 유효성 90%+", dep:"AI-INF-001, AI-INF-003, AI-DES-002" },
+  { id:"AI-OPS-001", cat:"E", catName:"자율 운영", name:"지능형 로그 분석 및 장애 자동진단", pri:"상", phase:"Phase 2", wow:false, wowId:"",
+    desc:"시스템 로그/에러 메시지/메시지 큐 상태를 LLM이 분석하여 장애 원인 자동 진단 + 과거 해결 이력 기반 조치 방안 제시.",
+    asIs:"수동 로그 분석, 숙련자 의존 (MTTR 2-8시간)", toBe:"오류 발생 → 로그 패턴 + RAG 기반 원인 진단 + 해결 가이드",
+    kpi:"MTTR 50% 단축, 진단 정확도 80%+", dep:"AI-INF-001, AI-INF-002" },
+  { id:"AI-OPS-002", cat:"E", catName:"자율 운영", name:"자연어 운영 콘솔 (ChatOps)", pri:"중", phase:"Phase 2", wow:true, wowId:"W-09",
+    desc:"운영자가 자연어로 시스템 현황 질의 → LLM이 NL2SQL/NL2API로 운영 데이터 조회 → 답변 + 차트 즉석 생성.",
+    asIs:"수동 콘솔 조회, 복잡 질의는 DB 직접 쿼리 필요", toBe:"자연어 질의 → 즉시 답변 + 시각화",
+    kpi:"조회 작업시간 80% 단축, 응답 정확률 85%+", dep:"AI-INF-001, AI-OPS-001" },
+  { id:"AI-OPS-003", cat:"E", catName:"자율 운영", name:"인터페이스 헬스 스코어 대시보드", pri:"상", phase:"Phase 3", wow:true, wowId:"W-02",
+    desc:"전체 인터페이스에 대해 AI가 종합 건강 점수(0-100) 실시간 산출. 오류율/응답시간/트래픽/장애 확률 종합 헬스맵.",
+    asIs:"임계치 기반 단순 알람", toBe:"인터페이스별 헬스 스코어 → '곧 노란색으로 갈 것' 사전 제시",
+    kpi:"정확도 75%+, 사전 탐지율 60%+", dep:"AI-OPS-001, AI-INF-003" },
+  { id:"AI-OPS-004", cat:"E", catName:"자율 운영", name:"자가 치유 엔진 (Self-Healing)", pri:"상", phase:"Phase 3", wow:true, wowId:"W-03",
+    desc:"장애 발생 → AI 자동 진단 → 과거 이력 기반 복구 전략(재시도/우회/커넥션 풀 재설정) 자동 실행. 사람 개입 전 시스템이 스스로 회복.",
+    asIs:"장애 인지 → 수동 분석 → 수동 복구 (수시간)", toBe:"장애 감지 → 자동 진단 → 복구 전략 → 자동 조치 → 보고",
+    kpi:"자가 치유 성공률 70%+", dep:"AI-OPS-001, AI-OPS-003" },
+  { id:"AI-OPS-005", cat:"E", catName:"자율 운영", name:"예측 기반 사전 경고", pri:"중", phase:"Phase 3", wow:false, wowId:"",
+    desc:"과거 운영 데이터 패턴 학습 → 장애 가능성 높은 인터페이스 사전 경고. 시계열 분석 기반 이상 징후 조기 감지.",
+    asIs:"임계치 기반 알람, 경험 의존", toBe:"시계열 분석 → 이상 패턴 탐지 → 예측 알림 + 선제 조치",
+    kpi:"사전 탐지율 60%+, 다운타임 30% 감소", dep:"AI-OPS-001, AI-OPS-003" },
+  { id:"AI-SEC-001", cat:"F", catName:"보안/거버넌스", name:"민감 데이터 실시간 탐지/마스킹", pri:"상", phase:"Phase 3", wow:true, wowId:"W-04",
+    desc:"EAI/ESB를 통해 흐르는 데이터 내 PII(주민번호, 카드번호 등)를 AI가 실시간 탐지 → 자동 마스킹. 금융/공공 보안 감사 대응 핵심.",
+    asIs:"정적 정규식 기반 마스킹, 신규 패턴 미대응", toBe:"AI 실시간 스캔 → PII 자동 탐지 → 권한 기반 마스킹",
+    kpi:"PII 탐지율 95%+, 오탐율 5% 이하", dep:"AI-INF-001" },
+  { id:"AI-SEC-002", cat:"F", catName:"보안/거버넌스", name:"규제 준수 자동 검사", pri:"중", phase:"Phase 3", wow:true, wowId:"W-10",
+    desc:"인터페이스 데이터가 개인정보보호법/전자금융거래법/GDPR 등 규제를 준수하는지 AI가 실시간 모니터링 + 위반 시 즉시 경고 + 감사 리포트.",
+    asIs:"수동 감사, 사후 점검", toBe:"실시간 규제 준수 검사 → 위반 차단/경고 → 리포트 자동 생성",
+    kpi:"위반 실시간 탐지율 90%+", dep:"AI-SEC-001, AI-INF-002" },
+  { id:"AI-SEC-003", cat:"F", catName:"보안/거버넌스", name:"AI 에이전트 거버넌스 (권한/쿼터)", pri:"중", phase:"Phase 3", wow:false, wowId:"",
+    desc:"AI 에이전트별 접근 권한/호출 쿼터를 실시간 관리하고 위반 시 자동 차단.",
+    asIs:"에이전트 거버넌스 체계 부재", toBe:"에이전트별 권한/쿼터 실시간 관리 → 위반 자동 차단",
+    kpi:"위반 차단율 99%+", dep:"AI-INF-001" },
+  { id:"AI-EXT-001", cat:"G", catName:"고객가치/확장", name:"AI 에이전트 허브 / MCP 서버", pri:"상", phase:"Phase 4", wow:true, wowId:"W-05",
+    desc:"EAI/ESB를 AI 에이전트의 데이터 인터페이스 대행자로 포지셔닝. 외부 AI 에이전트가 MCP 프로토콜로 연계 자원 카탈로그 조회 + 자연어 데이터 요청.",
+    asIs:"AI 에이전트와의 인터페이스 체계 부재", toBe:"MCP 프로토콜 기반 메타데이터 노출 + 에이전트 데이터 요청 → 수집/전달",
+    kpi:"MCP 연동 성공, 응답 성공률 90%+", dep:"AI-INF-001, AI-INF-003, AI-SEC-003" },
+  { id:"AI-EXT-002", cat:"G", catName:"고객가치/확장", name:"의도 기반 데이터 큐레이션", pri:"상", phase:"Phase 4", wow:true, wowId:"W-06",
+    desc:"질의 의도를 분석하여 연관 데이터까지 패키징 → RAG에 적합한 형태로 변환 제공. 단순 전달자에서 지식 공급자로.",
+    asIs:"요청 테이블/필드만 단순 전달", toBe:"'최근 주문 현황' → 주문+고객+상품+재고 조인 → RAG용 변환",
+    kpi:"AI 에이전트 답변 품질 향상률", dep:"AI-EXT-001, AI-INF-002, AI-DIS-001" },
+  { id:"AI-EXT-003", cat:"G", catName:"고객가치/확장", name:"비즈니스 영향도 시뮬레이션", pri:"중", phase:"Phase 4", wow:true, wowId:"W-07",
+    desc:"특정 인터페이스 장애/변경이 비즈니스 프로세스 전체에 미치는 영향을 AI가 시뮬레이션하여 시각적으로 제시.",
+    asIs:"수동 분석, 연쇄 영향 파악 어려움", toBe:"인터페이스 선택 → 비즈니스 영향 경로 시뮬레이션 → 시각화",
+    kpi:"분석 소요시간 70% 단축", dep:"AI-OPS-003, AI-DIS-001" },
+  { id:"AI-EXT-004", cat:"G", catName:"고객가치/확장", name:"마이그레이션 자동 변환 (Legacy Accelerator)", pri:"중", phase:"Phase 4", wow:true, wowId:"W-08",
+    desc:"경쟁사 EAI/ESB(IBM ACE, Oracle SOA 등) 설정/코드를 AI가 분석하여 MI 포맷 자동 변환 + 마이그레이션 리포트.",
+    asIs:"완전 재구축 필요, 진입장벽 높음", toBe:"경쟁사 코드 입력 → MI 자동 변환 + 리포트",
+    kpi:"변환 정확도 70%+, 전환 공수 50% 단축", dep:"AI-INF-003, AI-DES-001~004" },
+  { id:"AI-EXT-005", cat:"G", catName:"고객가치/확장", name:"기술문서 자동생성 및 지식 검색", pri:"중", phase:"Phase 4", wow:false, wowId:"",
+    desc:"구축 완료 인터페이스 설정으로부터 기술 문서 자동 생성 + 사내 지식베이스 AI 검색/질의응답.",
+    asIs:"수동 산출물 작성, 지식 산재", toBe:"시스템 메타 → 산출물 자동 생성 + 자연어 지식 검색",
+    kpi:"산출물 작성 70% 단축, 기술 문의 60% 단축", dep:"AI-INF-002" },
+  { id:"AI-EXT-006", cat:"G", catName:"고객가치/확장", name:"AI 기반 제안서 자동작성 지원", pri:"하", phase:"Phase 4", wow:false, wowId:"",
+    desc:"고객 RFP + 자사 솔루션 정보 → LLM이 맞춤형 제안서 초안 자동 생성.",
+    asIs:"수동 제안서 작성 (3-5일/건)", toBe:"RFP → 맞춤형 제안서 초안 자동 생성",
+    kpi:"초안 작성 시간 60% 단축", dep:"AI-INF-002" },
+];
+
+const phases = [
+  { id: 0, name: "Phase 0", title: "기반 인프라 구축", period: "1~2개월차", color: "#1B6B93",
+    desc: "LLM 추상화, RAG, 메타수집 — 모든 AI 기능의 공통 기반" },
+  { id: 1, name: "Phase 1", title: "핵심 설계/개발 기능", period: "2~4개월차", color: "#2E75B6",
+    desc: "M/M 절감 효과 최대 + 시연 가치 높은 기능 우선 검증" },
+  { id: 2, name: "Phase 2", title: "디스커버리 + 테스트 + 운영 핵심", period: "4~6개월차", color: "#E87722",
+    desc: "Wow Point 핵심인 W-11, W-01 포함. 킬러 데모 검증" },
+  { id: 3, name: "Phase 3", title: "자율 운영 고도화 + 보안/거버넌스", period: "6~8개월차", color: "#2E8B57",
+    desc: "자가 치유, 헬스 스코어, PII 마스킹 등 고급 운영 기능" },
+  { id: 4, name: "Phase 4", title: "고객가치 확장 + 에이전트 허브", period: "8~10개월차", color: "#8B5CF6",
+    desc: "AI 에이전트 생태계, 마이그레이션, 비즈니스 영향도" },
+];
+
+const depChains = [
+  { label: "기반 체인", nodes: ["INF-001(LLM)", "INF-002(RAG)", "INF-003(메타수집)"], note: "모든 기능의 뿌리" },
+  { label: "설계 체인", nodes: ["INF", "DES-001(정의)", "DES-002(매핑)", "DES-003(코드)", "DES-004(변환)", "DES-005(플로우)"] },
+  { label: "디스커버리", nodes: ["INF-003+002", "DIS-001(디스커버리)", "DIS-002(라이브 시연)"], note: "Wow Point 핵심" },
+  { label: "운영 체인", nodes: ["INF", "OPS-001(장애진단)", "OPS-003(헬스)", "OPS-004(자가치유)", "OPS-005(예측)"] },
+  { label: "보안 체인", nodes: ["INF-001", "SEC-001(PII)", "SEC-002(규제)"] },
+  { label: "확장 체인", nodes: ["SEC-003+INF-003", "EXT-001(에이전트허브)", "EXT-002(큐레이션)"] },
+];
+
+const kpiData = [
+  { dept: "솔루션 비즈니스사업부 (64명)", title: "M/M 절감", items: [
+    "Phase 1: 정의/매핑/코드 작업시간 측정", "Phase 2: 디스커버리로 분석 단계 단축 실증",
+    "Phase 3: 장애 대응시간 50% 단축", "Phase 4: 마이그레이션/문서 공수 절감" ] },
+  { dept: "솔루션사업부 (4명, 영업)", title: "Wow Point", items: [
+    "Phase 1: 코드 자동생성 시연", "Phase 2: ★ 라이브 시연 + 디스커버리 = 킬러 데모",
+    "Phase 3: ★ 헬스스코어 + 자가치유 + PII 데모", "Phase 4: ★ 에이전트 허브 = 비전 시연" ] },
+  { dept: "솔루션 개발사업부 (17명)", title: "공수 효율", items: [
+    "Phase 0: LLM/RAG 기반 구축 완료", "Phase 1: 코드생성 품질/효율 비교",
+    "Phase 2: 테스트 자동화 효율 비교", "Phase 4: 에이전트 허브 구현 효율" ] },
+];
+
+// ═══ RENDER ═══
+
+// Timeline
+const timelineEl = document.getElementById('timeline');
+phases.forEach(ph => {
+  const phReqs = reqs.filter(r => r.phase === ph.name);
+  const block = document.createElement('div');
+  block.className = 'phase-block';
+  block.innerHTML = `
+    <div class="phase-dot" style="border-color:${ph.color}"></div>
+    <div class="phase-header">
+      <span class="phase-tag" style="background:${ph.color}">${ph.name}</span>
+      <span class="phase-period">${ph.period}</span>
+    </div>
+    <div class="phase-title">${ph.title}</div>
+    <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">${ph.desc}</p>
+    <div class="phase-items">
+      ${phReqs.map(r => `
+        <div class="phase-item">
+          <span class="id">${r.id}</span>
+          ${r.wow ? `<span class="wow">★ ${r.wowId}</span>` : ''}
+          <span style="flex:1">${r.name}</span>
+          <span class="pri ${r.pri==='상'?'pri-high':r.pri==='중'?'pri-mid':'pri-low'}">${r.pri}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  timelineEl.appendChild(block);
+});
+
+// Filters
+const cats = [...new Set(reqs.map(r => r.cat))];
+const filtersEl = document.getElementById('reqFilters');
+filtersEl.innerHTML = `<button class="req-filter active" data-cat="ALL">전체 (${reqs.length})</button>` +
+  cats.map(cat => {
+    const count = reqs.filter(r => r.cat === cat).length;
+    const name = reqs.find(r => r.cat === cat).catName;
+    return `<button class="req-filter" data-cat="${cat}">${cat}. ${name} (${count})</button>`;
+  }).join('');
+
+filtersEl.addEventListener('click', e => {
+  if (!e.target.classList.contains('req-filter')) return;
+  filtersEl.querySelectorAll('.req-filter').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  renderReqs(e.target.dataset.cat);
+});
+
+function renderReqs(cat) {
+  const list = cat === 'ALL' ? reqs : reqs.filter(r => r.cat === cat);
+  const el = document.getElementById('reqList');
+  el.innerHTML = list.map(r => `
+    <div class="req-card ${r.wow ? 'wow-card' : ''}" data-id="${r.id}">
+      <div class="req-card-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="arrow">▶</span>
+        <span class="req-id">${r.id}</span>
+        <span class="req-name">${r.wow ? '★ ' : ''}${r.name}</span>
+        <div class="tags">
+          ${r.wow ? `<span class="wow">${r.wowId}</span>` : ''}
+          <span class="pri ${r.pri==='상'?'pri-high':r.pri==='중'?'pri-mid':'pri-low'}">${r.pri}</span>
+          <span class="phase-tag" style="background:${phases.find(p=>p.name===r.phase)?.color||'#666'};font-size:0.65rem;padding:2px 8px;border-radius:4px">${r.phase}</span>
+        </div>
+      </div>
+      <div class="req-card-body">
+        <div class="req-field"><div class="req-field-label">상세 설명</div><div class="req-field-value">${r.desc}</div></div>
+        <div class="req-detail-grid">
+          <div class="req-field"><div class="req-field-label">현행 (As-Is)</div><div class="req-field-value">${r.asIs}</div></div>
+          <div class="req-field"><div class="req-field-label">목표 (To-Be)</div><div class="req-field-value">${r.toBe}</div></div>
+          <div class="req-field"><div class="req-field-label">성과 지표 (KPI)</div><div class="req-field-value">${r.kpi}</div></div>
+          <div class="req-field"><div class="req-field-label">기술 의존성</div><div class="req-field-value" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${r.dep}</div></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+renderReqs('ALL');
+
+// Dep chains
+const depEl = document.getElementById('depChains');
+depChains.forEach(ch => {
+  const div = document.createElement('div');
+  div.className = 'dep-chain';
+  div.innerHTML = `<span class="label">${ch.label}</span>` +
+    ch.nodes.map((n, i) => `<span class="dep-node">${n}</span>${i < ch.nodes.length-1 ? '<span class="dep-arrow">→</span>' : ''}`).join('') +
+    (ch.note ? `<span style="font-size:0.75rem;color:var(--text-muted);margin-left:auto">— ${ch.note}</span>` : '');
+  depEl.appendChild(div);
+});
+
+// KPI
+const kpiEl = document.getElementById('kpiGrid');
+kpiData.forEach(k => {
+  const div = document.createElement('div');
+  div.className = 'kpi-card';
+  div.innerHTML = `<div class="dept">${k.dept}</div><h4>${k.title}</h4><ul>${k.items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+  kpiEl.appendChild(div);
+});
+
+// Nav active state
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (scrollY >= s.offsetTop - 120) current = s.id; });
+  navLinks.forEach(a => {
+    a.classList.remove('active');
+    if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

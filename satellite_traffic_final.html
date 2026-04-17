@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>노동보험 ↔ 위성시스템 연계 트래픽 (2026.03)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#1a1a1a}
+.header{padding:24px 32px;border-bottom:3px solid #1F4E79}
+.header h1{font-size:24px;font-weight:800;color:#1F4E79}
+.header .sub{font-size:13px;color:#555;margin-top:4px}
+.legend{display:flex;gap:36px;justify-content:center;padding:14px 0;border-bottom:1px solid #ccc}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:#333}
+.canvas-wrap{display:flex;justify-content:center;padding:16px 0;overflow-x:auto}
+svg text{font-family:'Noto Sans KR',sans-serif}
+.detail-section{max-width:1600px;margin:0 auto;padding:24px 32px}
+.detail-section h2{font-size:18px;font-weight:800;color:#1F4E79;margin-bottom:14px;border-bottom:3px solid #1F4E79;padding-bottom:8px}
+.tbl-wrap{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:32px}
+.tbl-wrap h3{font-size:15px;font-weight:700;margin-bottom:10px}
+.tbl-wrap h3.out-h{color:#8B0000}
+.tbl-wrap h3.in-h{color:#1F4E79}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:#fff;font-weight:700;padding:8px 12px;font-size:12px}
+th.out-th{background:#8B0000}
+th.in-th{background:#1F4E79}
+td{padding:6px 12px;border-bottom:1px solid #ddd;font-size:13px}
+tr:hover{background:#f5f5fa}
+.num{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.num-out{color:#8B0000}
+.num-in{color:#1F4E79}
+.bar-cell{width:130px}
+.bar-bg{height:10px;border-radius:5px;background:#e8e8e8;overflow:hidden}
+.bar-fill-out{height:100%;border-radius:5px;background:#C00000}
+.bar-fill-in{height:100%;border-radius:5px;background:#1F4E79}
+.note{max-width:1600px;margin:0 auto 24px;padding:0 32px;font-size:12px;color:#888}
+@media(max-width:900px){.tbl-wrap{grid-template-columns:1fr}}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>노동보험 시스템 연계 트래픽 현황</h1>
+<div class="sub">2026년 3월 기준 · 노동보험 서브시스템별 위성시스템 인바운드/아웃바운드 레코드 건수 · 데이터 출처: MASTERLOG 트래킹DB</div>
+</div>
+<div class="legend">
+<div class="legend-item"><svg width="44" height="12"><line x1="0" y1="6" x2="44" y2="6" stroke="#C00000" stroke-width="5"/></svg> 아웃바운드 (노동보험 → 위성)</div>
+<div class="legend-item"><svg width="44" height="12"><line x1="0" y1="6" x2="44" y2="6" stroke="#2E75B6" stroke-width="5"/></svg> 인바운드 (위성 → 노동보험)</div>
+<div class="legend-item" style="color:#999;font-weight:400">선 굵기 = 건수 비례</div>
+</div>
+<div class="canvas-wrap"><svg id="diagram" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<div class="detail-section">
+<h2>서브시스템 ↔ 위성시스템 상세 트래픽 (레코드 건수)</h2>
+<div class="tbl-wrap">
+<div><h3 class="out-h">▶ 아웃바운드 (노동보험 → 위성)</h3>
+<table><thead><tr><th class="out-th">서브시스템</th><th class="out-th">위성시스템</th><th class="out-th" style="text-align:right">레코드 건수</th><th class="out-th bar-cell">비중</th></tr></thead><tbody id="tbOut"></tbody></table></div>
+<div><h3 class="in-h">◀ 인바운드 (위성 → 노동보험)</h3>
+<table><thead><tr><th class="in-th">위성시스템</th><th class="in-th">서브시스템</th><th class="in-th" style="text-align:right">레코드 건수</th><th class="in-th bar-cell">비중</th></tr></thead><tbody id="tbIn"></tbody></table></div>
+</div></div>
+<div class="note">※ 1,000건 미만 트래픽은 다이어그램에서 생략.</div>
+<script>
+const W=1600,H=980,svg=document.getElementById('diagram');
+svg.setAttribute('width',W);svg.setAttribute('height',H);svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+const subs=['A.요양','B.보상','C.진료비/약제비','D.재활','E.구상','F.송무','G.심사','H.진폐','I.복합민원','K.가입지원','L.납부지원','M.체납정리','N.임금채권','Q.공통업무','T.자격증명업무'];
+const SX=W/2,SW=180,SH=44,SG=13,ST=50,sp={};
+subs.forEach((s,i)=>{const y=ST+i*(SH+SG);sp[s]={x:SX,y:y+SH/2,l:SX-SW/2,r:SX+SW/2,t:y};});
+const N={'EAD':'장애인고용공단','EHB':'하나은행','EIA':'국민건강보험','EKB':'국민은행','EKD':'보험개발원','EKE':'고용정보원','EKP':'카카오페이','ELA':'고용노동부','EMW':'생산적복지','ENH':'건강보험IF','ENM':'무인민원발급','ENP':'국민연금IF','EOS':'산업안전보건','EPP':'조달청','EPS':'우정사업본부','EPV':'국가보훈처','EWB':'우리은행','HAB':'행정정보공동이용','MRB':'병원MIS','NAS':'인증','NCC':'전국대표번호','NCS':'고객상담','NHP':'홈페이지','NID':'두루모아','NJS':'일자리안정','NKM':'KMS지식관리','NSA':'스마트자동접수','NSM':'스마트메시지','NTM':'TRMS감시','NTS':'토탈서비스','NWP':'근로복지넷','NWS':'근로복지서비스'};
+const OB=[{s:'Q.공통업무',t:'NCS',r:12712640},{s:'A.요양',t:'ELA',r:1510081},{s:'Q.공통업무',t:'EOS',r:1205372},{s:'N.임금채권',t:'ELA',r:962006},{s:'B.보상',t:'EOS',r:842505},{s:'A.요양',t:'NHP',r:756252},{s:'B.보상',t:'NCS',r:578731},{s:'A.요양',t:'EOS',r:464652},{s:'Q.공통업무',t:'NSA',r:415615},{s:'B.보상',t:'ELA',r:371479},{s:'B.보상',t:'EKB',r:297387},{s:'A.요양',t:'NCS',r:256870},{s:'B.보상',t:'EWB',r:226505},{s:'Q.공통업무',t:'NKM',r:148695},{s:'A.요양',t:'EKE',r:91537},{s:'B.보상',t:'EKE',r:75291},{s:'Q.공통업무',t:'NJS',r:61558},{s:'C.진료비/약제비',t:'NCS',r:49254},{s:'N.임금채권',t:'NWS',r:28262},{s:'Q.공통업무',t:'ELA',r:21900},{s:'Q.공통업무',t:'NTM',r:18406},{s:'N.임금채권',t:'NCS',r:17316},{s:'B.보상',t:'MRB',r:15432},{s:'Q.공통업무',t:'EKE',r:9434},{s:'A.요양',t:'NSM',r:8154},{s:'C.진료비/약제비',t:'EIA',r:5970},{s:'D.재활',t:'NID',r:5548},{s:'D.재활',t:'NCS',r:5525},{s:'D.재활',t:'NHP',r:5278},{s:'B.보상',t:'EHB',r:4395},{s:'A.요양',t:'MRB',r:4228},{s:'H.진폐',t:'EOS',r:4185},{s:'G.심사',t:'EKP',r:3544},{s:'D.재활',t:'EKE',r:3233},{s:'A.요양',t:'EKD',r:2879},{s:'D.재활',t:'EOS',r:1442}];
+const IB=[{s:'A.요양',t:'EOS',r:2304766},{s:'N.임금채권',t:'NWS',r:1463931},{s:'D.재활',t:'EKE',r:1311022},{s:'B.보상',t:'EKB',r:460059},{s:'I.복합민원',t:'EIA',r:135780},{s:'B.보상',t:'EWB',r:124684},{s:'A.요양',t:'MRB',r:108169},{s:'M.체납정리',t:'EKB',r:60634},{s:'Q.공통업무',t:'NCS',r:59210},{s:'D.재활',t:'NCC',r:41920},{s:'B.보상',t:'NCC',r:36531},{s:'A.요양',t:'NTS',r:30944},{s:'N.임금채권',t:'ELA',r:17447},{s:'A.요양',t:'NSM',r:13870},{s:'A.요양',t:'ELA',r:11752},{s:'Q.공통업무',t:'NAS',r:10891},{s:'G.심사',t:'EKP',r:6547},{s:'B.보상',t:'EHB',r:4388},{s:'Q.공통업무',t:'NWS',r:4365},{s:'B.보상',t:'MRB',r:3199},{s:'D.재활',t:'EOS',r:1360},{s:'A.요양',t:'EIA',r:1181},{s:'A.요양',t:'NCC',r:1107}];
+const iS={},oS={};IB.forEach(d=>{iS[d.t]=(iS[d.t]||0)+d.r;});OB.forEach(d=>{oS[d.t]=(oS[d.t]||0)+d.r;});
+const iL=Object.entries(iS).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+const oL=Object.entries(oS).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+const TW=220,TH=40,LX=170,RX=W-170;
+const iSp=Math.min(56,(H-50)/iL.length),iY0=(H-iL.length*iSp)/2+iSp/2;
+const iP={};iL.forEach((s,i)=>{iP[s]={x:LX,y:iY0+i*iSp};});
+const oSp=Math.min(50,(H-50)/oL.length),oY0=(H-oL.length*oSp)/2+oSp/2;
+const oP={};oL.forEach((s,i)=>{oP[s]={x:RX,y:oY0+i*oSp};});
+const mR=Math.max(...[...OB,...IB].map(d=>d.r)),fmt=n=>n.toLocaleString();
+let h=`<rect width="${W}" height="${H}" fill="#fff"/>`;
+OB.forEach(d=>{const a=sp[d.s],b=oP[d.t];if(!a||!b)return;const rt=Math.sqrt(d.r/mR),sw=Math.max(1,rt*18),op=Math.max(0.3,Math.min(0.9,rt*0.65+0.25));h+=`<path d="M${a.r},${a.y} C${a.r+90},${a.y} ${b.x-TW/2-90},${b.y} ${b.x-TW/2-6},${b.y}" fill="none" stroke="rgba(192,0,0,${op})" stroke-width="${sw}" stroke-linecap="round"/>`;});
+IB.forEach(d=>{const a=sp[d.s],b=iP[d.t];if(!a||!b)return;const rt=Math.sqrt(d.r/mR),sw=Math.max(1,rt*18),op=Math.max(0.3,Math.min(0.9,rt*0.65+0.25));h+=`<path d="M${b.x+TW/2+6},${b.y} C${b.x+TW/2+90},${b.y} ${a.l-90},${a.y} ${a.l},${a.y}" fill="none" stroke="rgba(46,117,182,${op})" stroke-width="${sw}" stroke-linecap="round"/>`;});
+const sHt=subs.length*(SH+SG)+12;
+h+=`<rect x="${SX-SW/2-22}" y="${ST-24}" width="${SW+44}" height="${sHt}" rx="14" fill="#F5F7FB" stroke="#B8C8DC" stroke-width="1.5"/>`;
+h+=`<text x="${SX}" y="${ST-36}" fill="#1F4E79" font-size="20" font-weight="900" text-anchor="middle">노동보험 시스템</text>`;
+subs.forEach(s=>{const p=sp[s],ac=OB.some(d=>d.s===s)||IB.some(d=>d.s===s);h+=`<rect x="${p.l}" y="${p.t}" width="${SW}" height="${SH}" rx="8" fill="${ac?'#1F4E79':'#A0A8B8'}"/>`;let lb=s;if(s==='T.자격증명업무')lb='T.자격증명';h+=`<text x="${SX}" y="${p.y+2}" fill="#fff" font-size="${lb.length>8?'13':'16'}" font-weight="800" text-anchor="middle" dominant-baseline="middle">${lb}</text>`;});
+h+=`<text x="${LX}" y="20" fill="#2E75B6" font-size="18" font-weight="900" text-anchor="middle">인바운드 소스</text>`;
+h+=`<text x="${LX}" y="40" fill="#888" font-size="13" font-weight="500" text-anchor="middle">(위성 → 노동보험)</text>`;
+iL.forEach(s=>{const p=iP[s];h+=`<rect x="${p.x-TW/2}" y="${p.y-TH/2}" width="${TW}" height="${TH}" rx="7" fill="#EBF3FB" stroke="#80A8CC" stroke-width="1.3"/>`;h+=`<text x="${p.x-TW/2+14}" y="${p.y+1}" fill="#1F4E79" font-size="15" font-weight="800" dominant-baseline="middle">${s}</text>`;h+=`<text x="${p.x-TW/2+60}" y="${p.y+1}" fill="#111" font-size="14" font-weight="500" dominant-baseline="middle">${N[s]||s}</text>`;h+=`<text x="${p.x+TW/2-10}" y="${p.y+1}" fill="#1F4E79" font-size="14" font-weight="800" text-anchor="end" dominant-baseline="middle">${fmt(iS[s])}</text>`;});
+h+=`<text x="${RX}" y="20" fill="#C00000" font-size="18" font-weight="900" text-anchor="middle">아웃바운드 타겟</text>`;
+h+=`<text x="${RX}" y="40" fill="#888" font-size="13" font-weight="500" text-anchor="middle">(노동보험 → 위성)</text>`;
+oL.forEach(s=>{const p=oP[s];h+=`<rect x="${p.x-TW/2}" y="${p.y-TH/2}" width="${TW}" height="${TH}" rx="7" fill="#FDF2F0" stroke="#CC8870" stroke-width="1.3"/>`;h+=`<text x="${p.x-TW/2+14}" y="${p.y+1}" fill="#8B0000" font-size="15" font-weight="800" dominant-baseline="middle">${s}</text>`;h+=`<text x="${p.x-TW/2+60}" y="${p.y+1}" fill="#111" font-size="14" font-weight="500" dominant-baseline="middle">${N[s]||s}</text>`;h+=`<text x="${p.x+TW/2-10}" y="${p.y+1}" fill="#C00000" font-size="14" font-weight="800" text-anchor="end" dominant-baseline="middle">${fmt(oS[s])}</text>`;});
+svg.innerHTML=h;
+const oSrt=[...OB].sort((a,b)=>b.r-a.r),iSrt=[...IB].sort((a,b)=>b.r-a.r);
+document.getElementById('tbOut').innerHTML=oSrt.map(d=>`<tr><td style="font-weight:700">${d.s}</td><td>${d.t} ${N[d.t]||''}</td><td class="num num-out">${fmt(d.r)}</td><td class="bar-cell"><div class="bar-bg"><div class="bar-fill-out" style="width:${(d.r/oSrt[0].r*100).toFixed(0)}%"></div></div></td></tr>`).join('');
+document.getElementById('tbIn').innerHTML=iSrt.map(d=>`<tr><td>${d.t} ${N[d.t]||''}</td><td style="font-weight:700">${d.s}</td><td class="num num-in">${fmt(d.r)}</td><td class="bar-cell"><div class="bar-bg"><div class="bar-fill-in" style="width:${(d.r/iSrt[0].r*100).toFixed(0)}%"></div></div></td></tr>`).join('');
+</script>
+</body>
+</html>
