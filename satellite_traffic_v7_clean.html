@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>노동보험 ↔ 위성시스템 연계 트래픽 (2026.03)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#1a1a1a}
+.header{padding:20px 32px;border-bottom:2px solid #1F4E79}
+.header h1{font-size:20px;font-weight:700;color:#1F4E79}
+.header .sub{font-size:12px;color:#666;margin-top:3px}
+.legend{display:flex;gap:32px;justify-content:center;padding:12px 0;border-bottom:1px solid #ddd}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:#444}
+.canvas-wrap{display:flex;justify-content:center;padding:12px 0;overflow:auto}
+svg text{font-family:'Noto Sans KR',sans-serif}
+
+.detail-section{max-width:1400px;margin:0 auto;padding:20px 32px}
+.detail-section h2{font-size:16px;font-weight:700;color:#1F4E79;margin-bottom:12px;border-bottom:2px solid #1F4E79;padding-bottom:6px}
+.tbl-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+.tbl-wrap h3{font-size:13px;font-weight:700;margin-bottom:8px}
+.tbl-wrap h3.out-h{color:#8B0000}
+.tbl-wrap h3.in-h{color:#1F4E79}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;color:#fff;font-weight:600;padding:6px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+th.out-th{background:#8B0000}
+th.in-th{background:#1F4E79}
+td{padding:5px 10px;border-bottom:1px solid #eee}
+tr:hover{background:#f8f8fc}
+.num{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.num-out{color:#8B0000}
+.num-in{color:#1F4E79}
+.bar-cell{width:120px}
+.bar-bg{height:8px;border-radius:4px;background:#f0f0f0;overflow:hidden}
+.bar-fill-out{height:100%;border-radius:4px;background:linear-gradient(90deg,#ef4444,#C00000)}
+.bar-fill-in{height:100%;border-radius:4px;background:linear-gradient(90deg,#60a5fa,#1F4E79)}
+.note{max-width:1400px;margin:0 auto 24px;padding:0 32px;font-size:11px;color:#999;line-height:1.6}
+@media(max-width:900px){.tbl-wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>노동보험 시스템 연계 트래픽 현황</h1>
+<div class="sub">2026년 3월 기준 · 노동보험 서브시스템별 위성시스템 인바운드/아웃바운드 레코드 건수 · 데이터 출처: MASTERLOG 트래킹DB</div>
+</div>
+<div class="legend">
+<div class="legend-item"><svg width="40" height="14"><line x1="0" y1="7" x2="30" y2="7" stroke="#C00000" stroke-width="3"/><polygon points="30,3 38,7 30,11" fill="#C00000"/></svg> 아웃바운드 (노동보험 → 위성)</div>
+<div class="legend-item"><svg width="40" height="14"><polygon points="8,3 0,7 8,11" fill="#2E75B6"/><line x1="8" y1="7" x2="38" y2="7" stroke="#2E75B6" stroke-width="3"/></svg> 인바운드 (위성 → 노동보험)</div>
+<div class="legend-item" style="color:#aaa;font-weight:400">선 굵기 = 건수 비례</div>
+</div>
+<div class="canvas-wrap">
+<svg id="diagram" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+
+<!-- 상세 테이블 -->
+<div class="detail-section">
+<h2>서브시스템 ↔ 위성시스템 상세 트래픽 (레코드 건수)</h2>
+<div class="tbl-wrap">
+<div>
+<h3 class="out-h">▶ 아웃바운드 TOP (노동보험 → 위성)</h3>
+<table><thead><tr><th class="out-th">서브시스템</th><th class="out-th">위성시스템</th><th class="out-th" style="text-align:right">레코드 건수</th><th class="out-th bar-cell">비중</th></tr></thead>
+<tbody id="tbOut"></tbody></table>
+</div>
+<div>
+<h3 class="in-h">◀ 인바운드 TOP (위성 → 노동보험)</h3>
+<table><thead><tr><th class="in-th">위성시스템</th><th class="in-th">서브시스템</th><th class="in-th" style="text-align:right">레코드 건수</th><th class="in-th bar-cell">비중</th></tr></thead>
+<tbody id="tbIn"></tbody></table>
+</div>
+</div>
+</div>
+<div class="note">※ 다이어그램에서 선 굵기는 개별 서브시스템↔위성시스템 간 최대 건수(12,712,640) 대비 상대 비율입니다. 1,000건 미만 트래픽은 생략하였습니다.</div>
+
+<script>
+const W = 1500, H = 1100;
+const CX = W/2, CY = H/2;
+const svg = document.getElementById('diagram');
+svg.setAttribute('width', W);
+svg.setAttribute('height', H);
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+const col1 = ['A.요양','B.보상','C.진료비/약제비','D.재활','E.구상','F.송무','G.심사','H.진폐'];
+const col2 = ['I.복합민원','K.가입지원','L.납부지원','M.체납정리','N.임금채권','Q.공통업무','T.자격증명'];
+const allSubs = [...col1,...col2];
+
+const SW = 148, SH = 40, SGAP = 10, COL_GAP = 16;
+const COL1_X = CX - SW/2 - COL_GAP/2;
+const COL2_X = CX + SW/2 + COL_GAP/2;
+const maxRows = Math.max(col1.length, col2.length);
+const stackH = maxRows*(SH+SGAP);
+const stackTop = CY - stackH/2 + 14;
+
+const subPos = {};
+col1.forEach((s,i) => { const y=stackTop+i*(SH+SGAP); subPos[s]={cx:COL1_X,y:y+SH/2,left:COL1_X-SW/2,right:COL1_X+SW/2,top:y,bot:y+SH}; });
+col2.forEach((s,i) => { const y=stackTop+i*(SH+SGAP); subPos[s]={cx:COL2_X,y:y+SH/2,left:COL2_X-SW/2,right:COL2_X+SW/2,top:y,bot:y+SH}; });
+subPos['T.자격증명업무'] = subPos['T.자격증명'];
+
+const N = {
+  'EAD':'장애인고용공단','EHB':'하나은행','EIA':'국민건강보험',
+  'EKB':'국민은행','EKD':'보험개발원','EKE':'고용정보원',
+  'EKP':'카카오페이','ELA':'고용노동부','EMW':'생산적복지',
+  'ENH':'건강보험IF','ENM':'무인민원발급','ENP':'국민연금IF',
+  'EOS':'산업안전보건','EPP':'조달청','EPS':'우정사업본부','EPV':'국가보훈처',
+  'EWB':'우리은행','HAB':'행정정보공동이용','MRB':'병원MIS',
+  'NAS':'인증','NCC':'전국대표번호','NCS':'고객상담','NHP':'홈페이지',
+  'NID':'두루모아','NJS':'일자리안정','NKM':'KMS지식관리',
+  'NSA':'스마트자동접수','NSM':'스마트메시지','NTM':'TRMS감시',
+  'NTS':'토탈서비스','NWP':'근로복지넷','NWS':'근로복지서비스'
+};
+
+const outbound = [
+  {sub:'Q.공통업무',sat:'NCS',r:12712640},{sub:'A.요양',sat:'ELA',r:1510081},
+  {sub:'Q.공통업무',sat:'EOS',r:1205372},{sub:'N.임금채권',sat:'ELA',r:962006},
+  {sub:'B.보상',sat:'EOS',r:842505},{sub:'A.요양',sat:'NHP',r:756252},
+  {sub:'B.보상',sat:'NCS',r:578731},{sub:'A.요양',sat:'EOS',r:464652},
+  {sub:'Q.공통업무',sat:'NSA',r:415615},{sub:'B.보상',sat:'ELA',r:371479},
+  {sub:'B.보상',sat:'EKB',r:297387},{sub:'A.요양',sat:'NCS',r:256870},
+  {sub:'B.보상',sat:'EWB',r:226505},{sub:'Q.공통업무',sat:'NKM',r:148695},
+  {sub:'A.요양',sat:'EKE',r:91537},{sub:'B.보상',sat:'EKE',r:75291},
+  {sub:'Q.공통업무',sat:'NJS',r:61558},{sub:'C.진료비/약제비',sat:'NCS',r:49254},
+  {sub:'N.임금채권',sat:'NWS',r:28262},{sub:'Q.공통업무',sat:'ELA',r:21900},
+  {sub:'Q.공통업무',sat:'NTM',r:18406},{sub:'N.임금채권',sat:'NCS',r:17316},
+  {sub:'B.보상',sat:'MRB',r:15432},{sub:'Q.공통업무',sat:'EKE',r:9434},
+  {sub:'A.요양',sat:'NSM',r:8154},{sub:'C.진료비/약제비',sat:'EIA',r:5970},
+  {sub:'D.재활',sat:'NID',r:5548},{sub:'D.재활',sat:'NCS',r:5525},
+  {sub:'D.재활',sat:'NHP',r:5278},{sub:'B.보상',sat:'EHB',r:4395},
+  {sub:'A.요양',sat:'MRB',r:4228},{sub:'H.진폐',sat:'EOS',r:4185},
+  {sub:'G.심사',sat:'EKP',r:3544},{sub:'D.재활',sat:'EKE',r:3233},
+  {sub:'A.요양',sat:'EKD',r:2879},{sub:'D.재활',sat:'EOS',r:1442},
+];
+const inbound = [
+  {sub:'A.요양',sat:'EOS',r:2304766},{sub:'N.임금채권',sat:'NWS',r:1463931},
+  {sub:'D.재활',sat:'EKE',r:1311022},{sub:'B.보상',sat:'EKB',r:460059},
+  {sub:'I.복합민원',sat:'EIA',r:135780},{sub:'B.보상',sat:'EWB',r:124684},
+  {sub:'A.요양',sat:'MRB',r:108169},{sub:'M.체납정리',sat:'EKB',r:60634},
+  {sub:'Q.공통업무',sat:'NCS',r:59210},{sub:'D.재활',sat:'NCC',r:41920},
+  {sub:'B.보상',sat:'NCC',r:36531},{sub:'A.요양',sat:'NTS',r:30944},
+  {sub:'N.임금채권',sat:'ELA',r:17447},{sub:'A.요양',sat:'NSM',r:13870},
+  {sub:'A.요양',sat:'ELA',r:11752},{sub:'Q.공통업무',sat:'NAS',r:10891},
+  {sub:'G.심사',sat:'EKP',r:6547},{sub:'B.보상',sat:'EHB',r:4388},
+  {sub:'Q.공통업무',sat:'NWS',r:4365},{sub:'B.보상',sat:'MRB',r:3199},
+  {sub:'D.재활',sat:'EOS',r:1360},{sub:'A.요양',sat:'EIA',r:1181},
+  {sub:'A.요양',sat:'NCC',r:1107},
+];
+
+// 위성별 IN/OUT 합산
+const satIn = {}, satOut = {};
+outbound.forEach(d => { satOut[d.sat]=(satOut[d.sat]||0)+d.r; });
+inbound.forEach(d => { satIn[d.sat]=(satIn[d.sat]||0)+d.r; });
+const satTotal = {};
+[...outbound,...inbound].forEach(d => { satTotal[d.sat]=(satTotal[d.sat]||0)+d.r; });
+const satList = Object.entries(satTotal).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+
+// 원형 배치
+const SAT_R = 460, SBW = 190, SBH = 46;
+const satPos = {};
+satList.forEach((s,i) => {
+  const a = (i/satList.length)*Math.PI*2 - Math.PI/2;
+  satPos[s] = {x:CX+SAT_R*Math.cos(a), y:CY+SAT_R*Math.sin(a), angle:a};
+});
+
+const maxR = Math.max(...[...outbound,...inbound].map(d=>d.r));
+const fmt = n => n.toLocaleString();
+
+let html = `<rect width="${W}" height="${H}" fill="#fff"/>`;
+html += `<defs>
+<marker id="ao" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+  <path d="M0,0.5 L9,4 L0,7.5" fill="#C00000"/>
+</marker>
+<marker id="ai" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+  <path d="M0,0.5 L9,4 L0,7.5" fill="#2E75B6"/>
+</marker>
+</defs>`;
+
+function subEdge(subId, satId) {
+  const s = subPos[subId], t = satPos[satId];
+  if(!s||!t) return null;
+  const dx=t.x-s.cx, dy=t.y-s.y;
+  if(Math.abs(dx)>Math.abs(dy)) return dx>0?{x:s.right,y:s.y}:{x:s.left,y:s.y};
+  return dy>0?{x:s.cx,y:s.bot}:{x:s.cx,y:s.top};
+}
+function satEdge(satId) {
+  const t=satPos[satId], a=t.angle+Math.PI;
+  return {x:t.x+(SBW/2+6)*Math.cos(a), y:t.y+(SBH/2+6)*Math.sin(a)};
+}
+
+// 연결선 (건수 텍스트 없음 — 굵기만으로 표현)
+outbound.forEach(d => {
+  const from=subEdge(d.sub,d.sat), to=satEdge(d.sat);
+  if(!from||!to) return;
+  const ratio=Math.sqrt(d.r/maxR);
+  const sw=Math.max(0.4, ratio*14);
+  const op=Math.max(0.06, Math.min(0.45, ratio*0.5+0.04));
+  const dx=to.x-from.x;
+  html += `<path d="M${from.x},${from.y} C${from.x+dx*0.35},${from.y} ${to.x-dx*0.35},${to.y} ${to.x},${to.y}" fill="none" stroke="rgba(192,0,0,${op})" stroke-width="${sw}" marker-end="url(#ao)"/>`;
+});
+inbound.forEach(d => {
+  const to=subEdge(d.sub,d.sat), from=satEdge(d.sat);
+  if(!from||!to) return;
+  const ratio=Math.sqrt(d.r/maxR);
+  const sw=Math.max(0.4, ratio*14);
+  const op=Math.max(0.06, Math.min(0.45, ratio*0.5+0.04));
+  const dx=to.x-from.x;
+  html += `<path d="M${from.x},${from.y} C${from.x+dx*0.35},${from.y} ${to.x-dx*0.35},${to.y} ${to.x},${to.y}" fill="none" stroke="rgba(46,117,182,${op})" stroke-width="${sw}" marker-end="url(#ai)"/>`;
+});
+
+// 중앙 허브 — 투명 + 점선
+const hubLeft=COL1_X-SW/2-20, hubRight=COL2_X+SW/2+20;
+const hubTop=stackTop-28, hubBot=stackTop+maxRows*(SH+SGAP)+4;
+html += `<rect x="${hubLeft}" y="${hubTop}" width="${hubRight-hubLeft}" height="${hubBot-hubTop}" rx="14" fill="none" stroke="#8899AA" stroke-width="1.5" stroke-dasharray="8,5"/>`;
+html += `<text x="${CX}" y="${hubTop-10}" fill="#1F4E79" font-size="16" font-weight="800" text-anchor="middle">노동보험 시스템</text>`;
+
+// 서브시스템 박스
+allSubs.forEach(s => {
+  const p=subPos[s]; if(!p) return;
+  const active = outbound.some(d=>d.sub===s)||inbound.some(d=>d.sub===s);
+  html += `<rect x="${p.left}" y="${p.top}" width="${SW}" height="${SH}" rx="7" fill="${active?'#1F4E79':'#B0B8C8'}"/>`;
+  let lbl=s;
+  html += `<text x="${p.cx}" y="${p.y+1}" fill="#fff" font-size="${lbl.length>8?'11':'13'}" font-weight="700" text-anchor="middle" dominant-baseline="middle">${lbl}</text>`;
+});
+
+// 외곽 위성시스템 — IN/OUT 합산 표기
+satList.forEach(s => {
+  const p=satPos[s];
+  const oi=satIn[s]||0, oo=satOut[s]||0;
+  const hasOut=oo>0, hasIn=oi>0, both=hasOut&&hasIn;
+  const fill = both?'#FAFAFE':hasIn?'#EBF3FB':'#FDF2F0';
+  const border = both?'#8888CC':hasIn?'#A8C4E0':'#E0B8A8';
+  const codeColor = both?'#333399':hasIn?'#1F4E79':'#8B0000';
+
+  html += `<rect x="${p.x-SBW/2}" y="${p.y-SBH/2}" width="${SBW}" height="${SBH}" rx="7" fill="${fill}" stroke="${border}" stroke-width="1.2"/>`;
+  // 1행: 코드 + 이름
+  html += `<text x="${p.x}" y="${p.y-10}" fill="${codeColor}" font-size="12" font-weight="800" text-anchor="middle" dominant-baseline="middle">${s}  ${N[s]||s}</text>`;
+  // 2행: IN / OUT
+  let line2 = '';
+  if(hasIn && hasOut) {
+    line2 = `IN ${fmt(oi)}  |  OUT ${fmt(oo)}`;
+  } else if(hasIn) {
+    line2 = `IN ${fmt(oi)}`;
+  } else {
+    line2 = `OUT ${fmt(oo)}`;
+  }
+  const numColor = both?'#555':hasIn?'#2E75B6':'#C00000';
+  html += `<text x="${p.x}" y="${p.y+7}" fill="${numColor}" font-size="10" font-weight="600" text-anchor="middle" dominant-baseline="middle">${line2}</text>`;
+});
+
+svg.innerHTML = html;
+
+// ---- 하단 상세 테이블 ----
+const outSorted = [...outbound].sort((a,b)=>b.r-a.r);
+const inSorted = [...inbound].sort((a,b)=>b.r-a.r);
+const maxOut = outSorted[0]?.r||1;
+const maxIn = inSorted[0]?.r||1;
+
+const tbOut = document.getElementById('tbOut');
+outSorted.forEach(d => {
+  const pct = (d.r/maxOut*100).toFixed(0);
+  tbOut.innerHTML += `<tr>
+    <td style="font-weight:600">${d.sub}</td>
+    <td>${d.sat} ${N[d.sat]||''}</td>
+    <td class="num num-out">${fmt(d.r)}</td>
+    <td class="bar-cell"><div class="bar-bg"><div class="bar-fill-out" style="width:${pct}%"></div></div></td>
+  </tr>`;
+});
+
+const tbIn = document.getElementById('tbIn');
+inSorted.forEach(d => {
+  const pct = (d.r/maxIn*100).toFixed(0);
+  tbIn.innerHTML += `<tr>
+    <td>${d.sat} ${N[d.sat]||''}</td>
+    <td style="font-weight:600">${d.sub}</td>
+    <td class="num num-in">${fmt(d.r)}</td>
+    <td class="bar-cell"><div class="bar-bg"><div class="bar-fill-in" style="width:${pct}%"></div></div></td>
+  </tr>`;
+});
+</script>
+</body>
+</html>
